@@ -39,7 +39,10 @@
 #include "../random/sampler.h"
 #include "../tensor/elemwise_binary_broadcast_op.h"
 
-#define MXNET_USE_MKL_DROPOUT defined(USE_MKL) && defined(_OPENMP) && !defined(__CUDACC__)
+#if defined(USE_MKL) && defined(_OPENMP) && !defined(__CUDACC__)
+#define MXNET_USE_MKL_DROPOUT 1
+#endif
+
 #if MXNET_USE_MKL_DROPOUT
 #include <omp.h>
 
@@ -64,7 +67,7 @@ const int MAX_DIM = 5;
 struct DropoutParam : public dmlc::Parameter<DropoutParam> {
   float p;
   int mode;
-  TShape axes;
+  mxnet::TShape axes;
   dmlc::optional<bool> cudnn_off;
   DMLC_DECLARE_PARAMETER(DropoutParam) {
     DMLC_DECLARE_FIELD(p).set_default(0.5)
@@ -75,9 +78,9 @@ struct DropoutParam : public dmlc::Parameter<DropoutParam> {
     .add_enum("always", dropout::kAlways)
     .set_default(dropout::kTraining)
     .describe("Whether to only turn on dropout during training or to also turn on for inference.");
-    DMLC_DECLARE_FIELD(axes).set_default(TShape())
+    DMLC_DECLARE_FIELD(axes).set_default(mxnet::TShape(0, 0))
     .describe("Axes for variational dropout kernel.");
-    DMLC_DECLARE_FIELD(cudnn_off).set_default(dmlc::optional<bool>(true))
+    DMLC_DECLARE_FIELD(cudnn_off).set_default(dmlc::optional<bool>(false))
     .describe("Whether to turn off cudnn in dropout operator. "
               "This option is ignored if axes is specified.");
   }
@@ -370,7 +373,7 @@ class DropoutOp {
                                           mask.dptr<DType>(),
                                           this->pkeep_);
           // broadcast mul
-          TShape new_lshape, new_rshape, new_oshape;
+          mxnet::TShape new_lshape, new_rshape, new_oshape;
           int ndim = BinaryBroadcastShapeCompact(in.shape_,
                                                  mask.shape_, out.shape_,
                                                  &new_lshape, &new_rshape, &new_oshape);
@@ -438,7 +441,7 @@ class DropoutOp {
         return;
       } else {
         // broardcast mul
-        TShape new_lshape, new_rshape, new_oshape;
+        mxnet::TShape new_lshape, new_rshape, new_oshape;
         int ndim = BinaryBroadcastShapeCompact(grad.shape_,
                                                mask.shape_, gdata.shape_,
                                                &new_lshape, &new_rshape, &new_oshape);
@@ -475,7 +478,7 @@ class DropoutOp {
   /*! \brief Dropout mode */
   dropout::DropoutOpMode mode_;
   /*! \brief Axes on which dropout mask is shared in the form of broadcast multiply */
-  TShape axes_;
+  mxnet::TShape axes_;
   /*! \brief Flag to record whether forward is executed in pass-through mode */
   bool dropout_passthrough_;
 #if MXNET_USE_CUDNN_DROPOUT
@@ -488,24 +491,6 @@ class DropoutOp {
   cudnnTensorDescriptor_t x_desc_, y_desc_, dx_desc_, dy_desc_;
 #endif  // MXNET_USE_CUDNN_DROPOUT
 };  // class DropoutOp
-
-static OpStatePtr CreateDropoutState(const nnvm::NodeAttrs &attrs,
-                                     const Context ctx,
-                                     const std::vector<TShape> &in_shapes,
-                                     const std::vector<int> &in_types) {
-  const DropoutParam& param = nnvm::get<DropoutParam>(attrs.parsed);
-  OpStatePtr state;
-  MSHADOW_REAL_TYPE_SWITCH(in_types[dropout::kData], DType, {
-    if (ctx.dev_type == kGPU) {
-      state = OpStatePtr::Create<DropoutOp<gpu, DType>>(param, ctx);
-    } else {
-      state = OpStatePtr::Create<DropoutOp<cpu, DType>>(param, ctx);
-    }
-    return state;
-  });
-  LOG(FATAL) << "should never reach here";
-  return OpStatePtr();  // should never reach here
-}
 
 template<typename xpu>
 void DropoutCompute(const OpStatePtr& state,

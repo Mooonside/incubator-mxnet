@@ -35,6 +35,8 @@ DMLC_REGISTER_PARAMETER(MultiSGDParam);
 DMLC_REGISTER_PARAMETER(MultiSGDMomParam);
 DMLC_REGISTER_PARAMETER(FTMLParam);
 DMLC_REGISTER_PARAMETER(AdamParam);
+DMLC_REGISTER_PARAMETER(NAGParam);
+DMLC_REGISTER_PARAMETER(NAGMomParam);
 DMLC_REGISTER_PARAMETER(RMSPropParam);
 DMLC_REGISTER_PARAMETER(RMSPropAlexParam);
 DMLC_REGISTER_PARAMETER(FtrlParam);
@@ -60,7 +62,7 @@ It updates the weights using::
 .set_num_inputs(2)
 .set_num_outputs(1)
 .set_attr_parser(ParamParser<SignSGDParam>)
-.set_attr<nnvm::FInferShape>("FInferShape", ElemwiseShape<2, 1>)
+.set_attr<mxnet::FInferShape>("FInferShape", ElemwiseShape<2, 1>)
 .set_attr<nnvm::FInferType>("FInferType", ElemwiseType<2, 1>)
 .set_attr<FCompute>("FCompute<cpu>", SignSGDUpdate<cpu>)
 .add_argument("weight", "NDArray-or-Symbol", "Weight")
@@ -89,7 +91,7 @@ Where the parameter ``momentum`` is the decay rate of momentum estimates at each
 .set_num_inputs(3)
 .set_num_outputs(1)
 .set_attr_parser(ParamParser<SignumParam>)
-.set_attr<nnvm::FInferShape>("FInferShape", ElemwiseShape<3, 1>)
+.set_attr<mxnet::FInferShape>("FInferShape", ElemwiseShape<3, 1>)
 .set_attr<nnvm::FInferType>("FInferType", ElemwiseType<3, 1>)
 .set_attr<nnvm::FMutateInputs>("FMutateInputs",
   [](const nnvm::NodeAttrs& attrs) {
@@ -332,7 +334,7 @@ It updates the weights using::
     return static_cast<uint32_t>(param.num_weights);
   })
 .set_attr_parser(ParamParser<MultiSGDParam>)
-.set_attr<nnvm::FInferShape>("FInferShape", MultiSGDShape<MultiSGDParam, 2>)
+.set_attr<mxnet::FInferShape>("FInferShape", MultiSGDShape<MultiSGDParam, 2>)
 .set_attr<nnvm::FInferType>("FInferType", ElemwiseType<-1, -1>)
 .set_attr<nnvm::FListInputNames>("FListInputNames",
   [](const NodeAttrs& attrs) {
@@ -377,7 +379,7 @@ Where the parameter ``momentum`` is the decay rate of momentum estimates at each
     return static_cast<uint32_t>(param.num_weights);
   })
 .set_attr_parser(ParamParser<MultiSGDMomParam>)
-.set_attr<nnvm::FInferShape>("FInferShape", MultiSGDShape<MultiSGDMomParam, 3>)
+.set_attr<mxnet::FInferShape>("FInferShape", MultiSGDShape<MultiSGDMomParam, 3>)
 .set_attr<nnvm::FInferType>("FInferType", ElemwiseType<-1, -1>)
 .set_attr<nnvm::FListInputNames>("FListInputNames",
   [](const NodeAttrs& attrs) {
@@ -420,7 +422,7 @@ It updates the weights using::
     return static_cast<uint32_t>(param.num_weights);
   })
 .set_attr_parser(ParamParser<MultiSGDParam>)
-.set_attr<nnvm::FInferShape>("FInferShape", MultiSGDShape<MultiSGDParam, 3>)
+.set_attr<mxnet::FInferShape>("FInferShape", MultiSGDShape<MultiSGDParam, 3>)
 .set_attr<nnvm::FInferType>("FInferType", MP_MultiSGD_InferType<MultiSGDParam, 3, 1>)
 .set_attr<nnvm::FListInputNames>("FListInputNames",
   [](const NodeAttrs& attrs) {
@@ -475,7 +477,7 @@ Where the parameter ``momentum`` is the decay rate of momentum estimates at each
     return static_cast<uint32_t>(param.num_weights);
   })
 .set_attr_parser(ParamParser<MultiSGDMomParam>)
-.set_attr<nnvm::FInferShape>("FInferShape", MultiSGDShape<MultiSGDMomParam, 4>)
+.set_attr<mxnet::FInferShape>("FInferShape", MultiSGDShape<MultiSGDMomParam, 4>)
 .set_attr<nnvm::FInferType>("FInferType", MP_MultiSGD_InferType<MultiSGDMomParam, 4, 2>)
 .set_attr<nnvm::FListInputNames>("FListInputNames",
   [](const NodeAttrs& attrs) {
@@ -521,7 +523,7 @@ only the row slices whose indices appear in grad.indices are updated::
 .set_num_inputs(2)
 .set_num_outputs(1)
 .set_attr_parser(ParamParser<SGDParam>)
-.set_attr<nnvm::FInferShape>("FInferShape", ElemwiseShape<2, 1>)
+.set_attr<mxnet::FInferShape>("FInferShape", ElemwiseShape<2, 1>)
 .set_attr<nnvm::FInferType>("FInferType", ElemwiseType<2, 1>)
 .set_attr<FInferStorageType>("FInferStorageType", SGDStorageType)
 .set_attr<FCompute>("FCompute<cpu>", SGDUpdate<cpu>)
@@ -562,7 +564,7 @@ only the row slices whose indices appear in grad.indices are updated (for both w
 .set_num_inputs(3)
 .set_num_outputs(1)
 .set_attr_parser(ParamParser<SGDMomParam>)
-.set_attr<nnvm::FInferShape>("FInferShape", ElemwiseShape<3, 1>)
+.set_attr<mxnet::FInferShape>("FInferShape", ElemwiseShape<3, 1>)
 .set_attr<nnvm::FInferType>("FInferType", ElemwiseType<3, 1>)
 .set_attr<FInferStorageType>("FInferStorageType", StdOptStorageType<1, SGDMomParam>)
 .set_attr<nnvm::FMutateInputs>("FMutateInputs",
@@ -589,8 +591,8 @@ NNVM_REGISTER_OP(mp_sgd_update)
 .set_num_inputs(3)
 .set_num_outputs(1)
 .set_attr_parser(ParamParser<SGDParam>)
-.set_attr<nnvm::FInferShape>("FInferShape", ElemwiseShape<3, 1>)
-.set_attr<nnvm::FInferType>("FInferType", MP_SGD_InferType<2, 1, 3>)
+.set_attr<mxnet::FInferShape>("FInferShape", ElemwiseShape<3, 1>)
+.set_attr<nnvm::FInferType>("FInferType", MP_InferType<2, 1, 3>)
 .set_attr<FCompute>("FCompute<cpu>", MP_SGDUpdate<cpu>)
 .set_attr<nnvm::FMutateInputs>("FMutateInputs",
   [](const nnvm::NodeAttrs& attrs) {
@@ -606,8 +608,8 @@ NNVM_REGISTER_OP(mp_sgd_mom_update)
 .set_num_inputs(4)
 .set_num_outputs(1)
 .set_attr_parser(ParamParser<SGDMomParam>)
-.set_attr<nnvm::FInferShape>("FInferShape", ElemwiseShape<4, 1>)
-.set_attr<nnvm::FInferType>("FInferType", MP_SGD_InferType<2, 1, 4>)
+.set_attr<mxnet::FInferShape>("FInferShape", ElemwiseShape<4, 1>)
+.set_attr<nnvm::FInferType>("FInferType", MP_InferType<2, 1, 4>)
 .set_attr<nnvm::FMutateInputs>("FMutateInputs",
   [](const nnvm::NodeAttrs& attrs) {
     return std::vector<uint32_t>{2, 3};
@@ -637,7 +639,7 @@ available at http://proceedings.mlr.press/v70/zheng17a/zheng17a.pdf.
 .set_num_inputs(5)
 .set_num_outputs(1)
 .set_attr_parser(ParamParser<FTMLParam>)
-.set_attr<nnvm::FInferShape>("FInferShape", ElemwiseShape<5, 1>)
+.set_attr<mxnet::FInferShape>("FInferShape", ElemwiseShape<5, 1>)
 .set_attr<nnvm::FInferType>("FInferType", ElemwiseType<5, 1>)
 .set_attr<nnvm::FMutateInputs>("FMutateInputs",
   [](const nnvm::NodeAttrs& attrs) {
@@ -685,7 +687,7 @@ only the row slices whose indices appear in grad.indices are updated (for w, m a
 .set_num_inputs(4)
 .set_num_outputs(1)
 .set_attr_parser(ParamParser<AdamParam>)
-.set_attr<nnvm::FInferShape>("FInferShape", ElemwiseShape<4, 1>)
+.set_attr<mxnet::FInferShape>("FInferShape", ElemwiseShape<4, 1>)
 .set_attr<FResourceRequest>("FResourceRequest",
   [](const NodeAttrs& attrs) {
     return std::vector<ResourceRequest>{ResourceRequest::kTempSpace};
@@ -703,6 +705,57 @@ only the row slices whose indices appear in grad.indices are updated (for w, m a
 .add_argument("mean", "NDArray-or-Symbol", "Moving mean")
 .add_argument("var", "NDArray-or-Symbol", "Moving variance")
 .add_arguments(AdamParam::__FIELDS__());
+
+
+NNVM_REGISTER_OP(nag_mom_update)
+.describe(R"code(Update function for Nesterov Accelerated Gradient( NAG) optimizer.
+It updates the weights using the following formula,
+
+.. math::
+  v_t = \gamma v_{t-1} + \eta * \nabla J(W_{t-1} - \gamma v_{t-1})\\
+  W_t = W_{t-1} - v_t
+
+Where 
+:math:`\eta` is the learning rate of the optimizer
+:math:`\gamma` is the decay rate of the momentum estimate
+:math:`\v_t` is the update vector at time step `t`
+:math:`\W_t` is the weight vector at time step `t`
+
+)code" ADD_FILELINE)
+.set_num_inputs(3)
+.set_num_outputs(1)
+.set_attr_parser(ParamParser<NAGMomParam>)
+.set_attr<mxnet::FInferShape>("FInferShape", ElemwiseShape<3, 1>)
+.set_attr<nnvm::FInferType>("FInferType", ElemwiseType<3, 1>)
+.set_attr<nnvm::FMutateInputs>("FMutateInputs",
+  [](const nnvm::NodeAttrs& attrs) {
+    return std::vector<uint32_t>{2};
+  })
+.set_attr<FCompute>("FCompute<cpu>", NAGMomUpdate<cpu>)
+.add_argument("weight", "NDArray-or-Symbol", "Weight")
+.add_argument("grad", "NDArray-or-Symbol", "Gradient")
+.add_argument("mom", "NDArray-or-Symbol", "Momentum")
+.add_arguments(NAGMomParam::__FIELDS__());
+
+
+NNVM_REGISTER_OP(mp_nag_mom_update)
+.describe(R"code(Update function for multi-precision Nesterov Accelerated Gradient( NAG) optimizer.
+)code" ADD_FILELINE)
+.set_num_inputs(4)
+.set_num_outputs(1)
+.set_attr_parser(ParamParser<NAGMomParam>)
+.set_attr<mxnet::FInferShape>("FInferShape", ElemwiseShape<4, 1>)
+.set_attr<nnvm::FInferType>("FInferType", MP_InferType<2, 1, 4>)
+.set_attr<nnvm::FMutateInputs>("FMutateInputs",
+  [](const nnvm::NodeAttrs& attrs) {
+    return std::vector<uint32_t>{2, 3};
+  })
+.set_attr<FCompute>("FCompute<cpu>", MP_NAGMomUpdate<cpu>)
+.add_argument("weight", "NDArray-or-Symbol", "Weight")
+.add_argument("grad", "NDArray-or-Symbol", "Gradient")
+.add_argument("mom", "NDArray-or-Symbol", "Momentum")
+.add_argument("weight32", "NDArray-or-Symbol", "Weight32")
+.add_arguments(NAGMomParam::__FIELDS__());
 
 
 NNVM_REGISTER_OP(rmsprop_update)
@@ -743,7 +796,7 @@ Hinton suggests the momentum term :math:`\gamma` to be 0.9 and the learning rate
 .set_num_inputs(3)
 .set_num_outputs(1)
 .set_attr_parser(ParamParser<RMSPropParam>)
-.set_attr<nnvm::FInferShape>("FInferShape", ElemwiseShape<3, 1>)
+.set_attr<mxnet::FInferShape>("FInferShape", ElemwiseShape<3, 1>)
 .set_attr<nnvm::FInferType>("FInferType", ElemwiseType<3, 1>)
 .set_attr<nnvm::FMutateInputs>("FMutateInputs",
   [](const nnvm::NodeAttrs &attrs) {
@@ -782,7 +835,7 @@ to be 0.9 and the learning rate :math:`\eta` to be 0.0001.
 .set_num_inputs(5)
 .set_num_outputs(1)
 .set_attr_parser(ParamParser<RMSPropAlexParam>)
-.set_attr<nnvm::FInferShape>("FInferShape", ElemwiseShape<5, 1>)
+.set_attr<mxnet::FInferShape>("FInferShape", ElemwiseShape<5, 1>)
 .set_attr<nnvm::FInferType>("FInferType", ElemwiseType<5, 1>)
 .set_attr<nnvm::FMutateInputs>("FMutateInputs",
   [](const nnvm::NodeAttrs& attrs) {
@@ -822,7 +875,7 @@ only the row slices whose indices appear in grad.indices are updated (for w, z a
 .set_num_inputs(4)
 .set_num_outputs(1)
 .set_attr_parser(ParamParser<FtrlParam>)
-.set_attr<nnvm::FInferShape>("FInferShape", ElemwiseShape<4, 1>)
+.set_attr<mxnet::FInferShape>("FInferShape", ElemwiseShape<4, 1>)
 .set_attr<nnvm::FInferType>("FInferType", ElemwiseType<4, 1>)
 .set_attr<FInferStorageType>("FInferStorageType", ElemwiseStorageType<4, 1, false, true, false>)
 .set_attr<nnvm::FMutateInputs>("FMutateInputs",
@@ -855,7 +908,7 @@ Note that non-zero values for the weight decay option are not supported.
 .set_num_inputs(3)
 .set_num_outputs(1)
 .set_attr_parser(ParamParser<AdagradParam>)
-.set_attr<nnvm::FInferShape>("FInferShape", ElemwiseShape<3, 1>)
+.set_attr<mxnet::FInferShape>("FInferShape", ElemwiseShape<3, 1>)
 .set_attr<nnvm::FInferType>("FInferType", ElemwiseType<3, 1>)
 .set_attr<FInferStorageType>("FInferStorageType", AdagradStorageType)
 .set_attr<nnvm::FMutateInputs>("FMutateInputs",

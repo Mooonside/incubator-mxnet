@@ -1,3 +1,20 @@
+<!--- Licensed to the Apache Software Foundation (ASF) under one -->
+<!--- or more contributor license agreements.  See the NOTICE file -->
+<!--- distributed with this work for additional information -->
+<!--- regarding copyright ownership.  The ASF licenses this file -->
+<!--- to you under the Apache License, Version 2.0 (the -->
+<!--- "License"); you may not use this file except in compliance -->
+<!--- with the License.  You may obtain a copy of the License at -->
+
+<!---   http://www.apache.org/licenses/LICENSE-2.0 -->
+
+<!--- Unless required by applicable law or agreed to in writing, -->
+<!--- software distributed under the License is distributed on an -->
+<!--- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY -->
+<!--- KIND, either express or implied.  See the License for the -->
+<!--- specific language governing permissions and limitations -->
+<!--- under the License. -->
+
 # Saving and Loading Gluon Models
 
 Training large models take a lot of time and it is a good idea to save the trained models to files to avoid training them again and again. There are a number of reasons to do this. For example, you might want to do inference on a machine that is different from the one where the model was trained. Sometimes model's performance on validation set decreases towards the end of the training because of overfitting. If you saved your model parameters after every epoch, at the end you can decide to use the model that performs best on the validation set. Another reason would be to train your model using one language (like Python that has a lot of tools for training) and run inference using a different language (like Scala probably because your application is built on Scala).
@@ -33,7 +50,7 @@ Let's define a helper function to build a LeNet model and another helper to trai
 
 ```python
 # Use GPU if one exists, else use CPU
-ctx = mx.gpu() if mx.test_utils.list_gpus() else mx.cpu()
+ctx = mx.gpu() if mx.context.num_gpus() else mx.cpu()
 
 # MNIST images are 28x28. Total pixels in input layer is 28x28 = 784
 num_inputs = 784
@@ -243,7 +260,10 @@ One of the main reasons to serialize model architecture into a JSON file is to l
 Serialized Hybrid networks (saved as .JSON and .params file) can be loaded and used inside Python frontend using `gluon.nn.SymbolBlock`. To demonstrate that, let's load the network we serialized above.
 
 ```python
-deserialized_net = gluon.nn.SymbolBlock.imports("lenet-symbol.json", ['data'], "lenet-0001.params", ctx=ctx)
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    deserialized_net = gluon.nn.SymbolBlock.imports("lenet-symbol.json", ['data'], "lenet-0001.params", ctx=ctx)
 ```
 
 `deserialized_net` now contains the network we deserialized from files. Let's test the deserialized network to make sure it works.

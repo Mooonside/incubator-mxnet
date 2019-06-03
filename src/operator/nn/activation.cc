@@ -67,7 +67,7 @@ struct ActivationGrad {
                                           const std::vector<nnvm::NodeEntry>& ograds) const {
     // ograds, output...
     std::vector<nnvm::NodeEntry> heads(ograds.begin(), ograds.end());
-    heads.emplace_back(nnvm::NodeEntry{n, activation::kOut, 0});
+    heads.emplace_back(n, activation::kOut, 0);
 
     const NodeAttrs& attrs = n->attrs;
     using namespace activation;
@@ -191,7 +191,7 @@ NNVM_REGISTER_OP(_backward_Activation)
 #if MXNET_USE_MKLDNN == 1
 .set_attr<FInferStorageType>("FInferStorageType", BackwardActStorageType)
 #endif
-.set_attr<nnvm::FInferShape>("FInferShape", ElemwiseShape<-1, 1>)
+.set_attr<mxnet::FInferShape>("FInferShape", ElemwiseShape<-1, 1>)
 .set_attr<nnvm::FInferType>("FInferType", ElemwiseType<-1, 1>)
 .set_attr<nnvm::FInplaceOption>("FInplaceOption", [](const NodeAttrs& attrs){
   return std::vector<std::pair<int, int> >{{0, 0}};
