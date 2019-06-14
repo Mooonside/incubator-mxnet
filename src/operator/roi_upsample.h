@@ -92,7 +92,7 @@ namespace mxnet {
       T *offset_top_data;
 
       for (int n = 0; n < nrois; ++n) {
-        VLOG(x) << n << " " << pooled_height << " " << pooled_width << " " << height << " " << width;
+//        VLOG(x) << n << " " << pooled_height << " " << pooled_width << " " << height << " " << width;
         int roi_batch_ind = 0;
         offset_bottom_rois = bottom_rois + n * rois_cols;
 
