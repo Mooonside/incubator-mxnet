@@ -89,13 +89,12 @@ namespace mxnet {
       T *top_data
     ) {
       const T *offset_bottom_rois;
-      const T *offset_roi_features;
       T *offset_top_data;
 
       for (int n = 0; n < nrois; ++n) {
+        VLOG(x) << n << " " << pooled_height << " " << pooled_width << " " << height << " " << width;
         int roi_batch_ind = 0;
         offset_bottom_rois = bottom_rois + n * rois_cols;
-        offset_roi_features = roi_features + n * channels * pooled_height * pooled_width;
 
         if (rois_cols == 5) {
           roi_batch_ind = static_cast<int>(offset_bottom_rois[0]);
@@ -135,7 +134,7 @@ namespace mxnet {
 
           for (int ph = 0; ph < pooled_height; ph++) {
             for (int pw = 0; pw < pooled_width; pw++) {
-              T rval = offset_roi_features[index_n_c + ph * pooled_width + pw];
+              T rval = roi_features[index_n_c + ph * pooled_width + pw];
               for (int iy = 0; iy < roi_bin_grid_h; iy++) {
                 const T yy = roi_start_h + ph * bin_size_h +
                              static_cast<T>(iy + .5f) * bin_size_h /
