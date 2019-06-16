@@ -116,7 +116,7 @@ namespace op {
         offset_bottom_rois++;
       }
 
-      if (roi_batch_ind >= batch_size) {
+      if (roi_batch_ind >= batch_size or roi_batch_ind < 0) {
         continue;
       }
       T *offset_top_data = top_data + (roi_batch_ind * channels + c) * height * width;
