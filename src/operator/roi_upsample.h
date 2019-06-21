@@ -77,6 +77,7 @@ namespace mxnet {
       mshadow::Stream <cpu> *s,
       const T *roi_features,
       const T *bottom_rois,
+      const float spatial_scale,
       const int nrois,
       const int batch_size,
       const int channels,
@@ -108,10 +109,10 @@ namespace mxnet {
         int index_n = n * channels * pooled_width * pooled_height;
 
         // Do not using rounding; this implementation detail is critical
-        T roi_start_w = offset_bottom_rois[0];
-        T roi_start_h = offset_bottom_rois[1];
-        T roi_end_w = offset_bottom_rois[2];
-        T roi_end_h = offset_bottom_rois[3];
+        T roi_start_w = offset_bottom_rois[0] * spatial_scale;
+        T roi_start_h = offset_bottom_rois[1] * spatial_scale;
+        T roi_end_w = offset_bottom_rois[2] * spatial_scale;
+        T roi_end_h = offset_bottom_rois[3] * spatial_scale;
 //        VLOG(x) << roi_start_w << ", " << roi_start_h << ", "<< roi_end_w << ", " << roi_end_h ;
         // Force malformed ROIs to be 1x1
         T roi_width = std::max(roi_end_w - roi_start_w, (T)1.);
@@ -242,6 +243,7 @@ namespace mxnet {
         mshadow::Stream <cpu> *s,
         const T *top_diff, // [batch_size, c, h, w]
         const T *bottom_rois,
+        const float spatial_scale,
         const int nrois,
         const int batch_size,
         const int channels,
@@ -272,10 +274,10 @@ namespace mxnet {
         int index_n = n * channels * pooled_width * pooled_height;
 
         // Do not using rounding; this implementation detail is critical
-        T roi_start_w = offset_bottom_rois[0];
-        T roi_start_h = offset_bottom_rois[1];
-        T roi_end_w = offset_bottom_rois[2];
-        T roi_end_h = offset_bottom_rois[3];
+        T roi_start_w = offset_bottom_rois[0] * spatial_scale;
+        T roi_start_h = offset_bottom_rois[1] * spatial_scale;
+        T roi_end_w = offset_bottom_rois[2] * spatial_scale;
+        T roi_end_h = offset_bottom_rois[3] * spatial_scale;
         // Force malformed ROIs to be 1x1
         T roi_width = std::max(roi_end_w - roi_start_w, (T) 1.);
         T roi_height = std::max(roi_end_h - roi_start_h, (T) 1.);

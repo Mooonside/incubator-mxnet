@@ -9,22 +9,6 @@
 
 namespace mxnet {
 namespace op {
-
-  using namespace mshadow::cuda;
-// The maximum number of blocks to use in the default kernel call.
-  constexpr int ROI_MAXIMUM_NUM_BLOCKS = 4096;
-/**
- * @brief Compute the number of blocks needed to run N threads.
- */
-  inline int ROI_GET_BLOCKS(const int N) {
-    return std::max(
-        std::min(
-            (N + kMaxThreadsPerBlock - 1) / kMaxThreadsPerBlock,
-            ROI_MAXIMUM_NUM_BLOCKS),
-        // Use at least 1 block, since CUDA does not allow empty block
-        1);
-  }
-
   template <typename T>
   __device__ void inverse_bilinear_interpolate(
       const int height,
@@ -91,6 +75,7 @@ namespace op {
       const int nthreads,
       const T *roi_features,
       const T *bottom_rois,
+      const float spatial_scale,
       const int batch_size,
       const int channels,
       const int height,
@@ -121,10 +106,10 @@ namespace op {
       }
       T *offset_top_data = top_data + (roi_batch_ind * channels + c) * height * width;
 
-      T roi_start_w = offset_bottom_rois[0];
-      T roi_start_h = offset_bottom_rois[1];
-      T roi_end_w = offset_bottom_rois[2];
-      T roi_end_h = offset_bottom_rois[3];
+      T roi_start_w = offset_bottom_rois[0] * spatial_scale;
+      T roi_start_h = offset_bottom_rois[1] * spatial_scale;
+      T roi_end_w = offset_bottom_rois[2] * spatial_scale;
+      T roi_end_h = offset_bottom_rois[3] * spatial_scale;
 
       // Force malformed ROIs to be 1x1
       T roi_width = max(roi_end_w - roi_start_w, (T) 1.);
@@ -163,7 +148,7 @@ namespace op {
           T r2 = rval * w2;
           T r3 = rval * w3;
           T r4 = rval * w4;
-//                  VLOG(x) << xx << " " << yy  << " " << x_low  << " " << y_low  << " " << x_high  << " " << y_high ;
+//          VLOG(x) << xx << " " << yy  << " " << x_low  << " " << y_low  << " " << x_high  << " " << y_high ;
 
           if (x_low >= 0 && x_high >= 0 && y_low >= 0 && y_high >= 0) {
             // atomic add is not needed for 怿now since it is single threaded
@@ -183,6 +168,7 @@ namespace op {
       mshadow::Stream<gpu> *s,
       const T *roi_features,
       const T *bottom_rois,
+      const float spatial_scale,
       const int nrois,
       const int batch_size,
       const int channels,
@@ -195,10 +181,15 @@ namespace op {
       T *top_data
   ) {
     int nthreads = nrois * channels * pooled_height * pooled_width;
-    RoIUpsampleForwardKernel<T> <<< ROI_GET_BLOCKS(nthreads), kMaxThreadsPerBlock >>> (
+
+//    int nthreads = nrois * channels * pooled_height * pooled_width;
+//    VLOG(x) << nrois << " " << batch_size << " " << channels << " " << height << " " << width << " " << pooled_height << " " << pooled_width << " " << sampling_ratio;
+    using namespace mxnet_op;
+    RoIUpsampleForwardKernel<T> <<< cuda_get_num_blocks(nthreads), mshadow::cuda::kBaseThreadNum >>> (
       nthreads,
       roi_features,
       bottom_rois,
+      spatial_scale,
       batch_size,
       channels,
       height,
@@ -209,6 +200,11 @@ namespace op {
       rois_cols,
       top_data
     );
+//    MSHADOW_CUDA_POST_KERNEL_CHECK(mxnet_generic_kernel);
+//    cudaError_t err = cudaDeviceSynchronize();
+//    if (err == cudaSuccess) VLOG(X) << "Success";
+//    if (err == cudaErrorNotReady) VLOG(x) << "Failed";
+
     return;
   }
 
@@ -280,6 +276,7 @@ namespace op {
       const int nthreads,
       const T *top_diff, // [batch_size, c, h, w]
       const T *bottom_rois,
+      const float spatial_scale,
       const int batch_size,
       const int channels,
       const int height,
@@ -304,15 +301,15 @@ namespace op {
         offset_bottom_rois++;
       }
 
-      if (roi_batch_ind >= batch_size) {
+      if (roi_batch_ind >= batch_size or roi_batch_ind < 0) {
         continue;
       }
       const T *offset_top_diff = top_diff + (roi_batch_ind * channels + c) * height * width;
 
-      T roi_start_w = offset_bottom_rois[0];
-      T roi_start_h = offset_bottom_rois[1];
-      T roi_end_w = offset_bottom_rois[2];
-      T roi_end_h = offset_bottom_rois[3];
+      T roi_start_w = offset_bottom_rois[0] * spatial_scale;
+      T roi_start_h = offset_bottom_rois[1] * spatial_scale;
+      T roi_end_w = offset_bottom_rois[2] * spatial_scale;
+      T roi_end_h = offset_bottom_rois[3] * spatial_scale;
 
       // Force malformed ROIs to be 1x1
       T roi_width = max(roi_end_w - roi_start_w, (T) 1.);
@@ -356,6 +353,7 @@ namespace op {
       mshadow::Stream <gpu> *s,
       const T *top_diff, // [batch_size, c, h, w]
       const T *bottom_rois,
+      const float spatial_scale,
       const int nrois,
       const int batch_size,
       const int channels,
@@ -368,10 +366,12 @@ namespace op {
       T *bottom_diff //[nrois, c, pooled_height, pooled_width]
   ) {
     int nthreads = nrois * channels * pooled_height * pooled_width;
-    RoIUpsampleBackwardKernel<T> <<< ROI_GET_BLOCKS(nthreads), kMaxThreadsPerBlock >>> (
+    using namespace mxnet_op;
+    RoIUpsampleBackwardKernel<T> <<< cuda_get_num_blocks(nthreads), mshadow::cuda::kBaseThreadNum >>> (
       nthreads,
       top_diff,
       bottom_rois,
+      spatial_scale,
       batch_size,
       channels,
       height,

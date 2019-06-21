@@ -23,6 +23,7 @@ namespace rus {
 
 struct RoIUpsampleParam : public dmlc::Parameter<RoIUpsampleParam> {
   int sample_ratio;
+  float spatial_scale;
   int output_height;
   int output_width;
   int output_batch;
@@ -31,6 +32,8 @@ struct RoIUpsampleParam : public dmlc::Parameter<RoIUpsampleParam> {
     DMLC_DECLARE_FIELD(sample_ratio)
         .set_default(-1)
         .describe("Sample ratio used in roi upsample");
+    DMLC_DECLARE_FIELD(spatial_scale)
+        .describe("spatial scale of boxes");
     DMLC_DECLARE_FIELD(output_height)
         .describe("the output height of roi upsample");
     DMLC_DECLARE_FIELD(output_width)
@@ -47,6 +50,7 @@ public:
   explicit RoIUpsampleOp(RoIUpsampleParam p) {
     this->param_ = p;
     sample_ratio_ = p.sample_ratio;
+    spatial_scale_ = p.spatial_scale;
     output_batch_ = p.output_batch;
     output_height_  = p.output_height;
     output_width_ = p.output_width;
@@ -62,12 +66,13 @@ public:
     LayerSetUp(in_data[rus::kROIFeatures].shape_,
                in_data[rus::kROIBoxes].shape_,
                out_data[rus::kOut].shape_);
-    Fill<false>(s, out_data[rus::kOut], kWriteTo, static_cast<DType>(0));
 
+    Fill<false>(s, out_data[rus::kOut], kWriteTo, static_cast<DType>(0));
     RoIUpsampleForward(
         s,
         in_data[rus::kROIFeatures].dptr<DType>(),
         in_data[rus::kROIBoxes].dptr<DType>(),
+        spatial_scale_,
         nrois_,
         output_batch_,
         channels_,
@@ -80,6 +85,7 @@ public:
         out_data[rus::kOut].dptr<DType>()
     );
   }
+
 
   virtual void Backward(const OpContext &ctx,
                         const std::vector<TBlob>& out_grad,
@@ -115,6 +121,7 @@ public:
         s,
         top_diff, // [batch_size, c, h, w]
         bottom_rois,
+        spatial_scale_,
         nrois_,
         output_batch_,
         channels_,
@@ -139,6 +146,7 @@ private:
   }
 
   RoIUpsampleParam param_;
+  float spatial_scale_;
   index_t nrois_;
   index_t channels_;
   index_t rois_cols_;
