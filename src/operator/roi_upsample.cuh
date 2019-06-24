@@ -123,8 +123,10 @@ namespace op {
                            : ceil(roi_height / pooled_height);  // e.g., = 2
       int roi_bin_grid_w =
           (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
+      // We do average (integral) pooling inside a bin
+      const T count = roi_bin_grid_h * roi_bin_grid_w;  // e.g. = 4
 
-      T rval = offset_roi_features[0];
+      T rval = offset_roi_features[0] / count;
       for (int iy = 0; iy < roi_bin_grid_h; iy++) {
         const T yy = roi_start_h + ph * bin_size_h +
                      static_cast<T>(iy + .5f) * bin_size_h /
